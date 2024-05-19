@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhatsApp Benzeri Uygulama</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f2f2f2;
+    }
+
+    .container {
+        display: flex;
+        width: 100%;
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .header {
+        flex: 1;
+        padding: 20px;
+        text-align: center;
+        background-color: #25d366;
+        color: #fff;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .user-list {
+        flex: 1;
+        height: 500px;
+        overflow-y: auto;
+        border-right: 1px solid #ccc;
+    }
+
+    .chat-box {
+        flex: 2;
+        height: 500px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .message {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+
+    .message.sent {
+        margin-left: auto;
+        background-color: #dcf8c6;
+        border: 1px solid #d4e8c3;
+    }
+
+    .message.received {
+        margin-right: auto;
+        background-color: #a7a5a5;
+        border: 1px solid #ccc;
+    }
+
+    #message-input {
+        width: calc(100% - 80px);
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin: 10px;
+    }
+
+    #send-button {
+        width: 60px;
+        padding: 10px;
+        background-color: #25d366;
+        border: none;
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        margin: 10px;
+    }
+
+    .current-user {
+        font-weight: bold;
+        color: #25d366;
+    }
+
+    /* Yeni stil kullanıcı kutuları için */
+    .user-list ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .user-list li {
+        background-color: #e0e0e0;
+        margin: 10px;
+        padding: 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .user-list li:hover {
+        background-color: #d4d4d4;
+    }
+
+    .user-list li.active {
+        background-color: #cccccc;
+        font-weight: bold;
+    }
+
+    .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #25d366;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .button:hover {
+        background-color: #128C7E;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        WhatsApp Benzeri Uygulama - <span id="current-user-display"></span>
+    </div>
+    <div class="user-list" id="user-list">
+        <h2>Kullanıcılar</h2>
+        <ul id="users"></ul>
+        <button class="button" onclick="deleteUser()">Kullanıcı Sil</button>
+    </div>
+    <div class="chat-box" id="chat-box">
+        <h2>Mesajlar</h2>
+        <div id="messages" style="flex: 1 1 auto; overflow-y: auto;"></div>
+        <div style="display: flex; align-items: center;">
+            <input type="text" id="message-input" placeholder="Mesajınızı girin...">
+            <button id="send-button" onclick="sendMessage()">Gönder</button>
+            <button class="button" onclick="deleteMessages()">Mesajları Sil</button>
+        </div>
+    </div>
+</div>
+
+<script>
+var currentUser = sessionStorage.getItem('currentUser'); // Şu anki kullanıcıyı oturumdan al
+var selectedUser = null; // Seçili kullanıcıyı takip etmek için
+const adminUser = 'admin'; // Admin kullanıcısı adı
+
+// LocalStorage'dan kullanıcıları yükle
+function loadUsersFromLocalStorage() {
+    var users = JSON.parse(localStorage.getItem('users')) || {};
+    return users;
+}
+
+// LocalStorage'dan mesajları yükle
+function loadMessagesFromLocalStorage() {
+    var messages = JSON.parse(localStorage.getItem('messages')) || {};
+    return messages;
+}
+
+// LocalStorage'a mesajları kaydet
+function saveMessagesToLocalStorage(messages) {
+    localStorage.setItem('messages', JSON.stringify(messages));
+}
+
+// Kullanıcı listesini güncelle
+function updateUserList() {
+    var userListElement = document.getElementById("users");
+    userListElement.innerHTML = ""; // Önceki kullanıcıları temizle
+
+    var users = loadUsersFromLocalStorage();
+    Object.keys(users).forEach(function(user) {
+        if (user !== currentUser && user !== adminUser) { // Giriş yapan kullanıcıyı ve admin'i atla
+            var listItem = document.createElement("li");
+            listItem.textContent = user;
+            listItem.onclick = function() {
+                selectedUser = user;
+                loadMessages(user);
+                setActiveUser(user);
+            };
+            userListElement.appendChild(listItem);
+        }
+    });
+}
+
+// Seçili kullanıcıyı vurgula
+function setActiveUser(user) {
+    var userItems = document.querySelectorAll("#users li");
+    userItems.forEach(function(item) {
+        if (item.textContent === user) {
+            item.classList.add("active");
+        } else {
+            item.classList.remove("active");
+        }
+    });
+}
+
+// Mesajları yükle
+function loadMessages(user) {
+    var messagesElement = document.getElementById("messages");
+    messagesElement.innerHTML = ""; // Önceki mesajları temizle
+
+    var messages = loadMessagesFromLocalStorage();
+    if (messages[user]) {
+        messages[user].forEach(function(message) {
+            var messageElement = document.createElement("div");
+            var messageContent;
+            if (message.sender === currentUser) {
+                messageContent = "Sen: " + message.content + " - " + message.timestamp;
+                messageElement.classList.add("sent");
+            } else {
+                messageContent = user + ": " + message.content + " - " + message.timestamp;
+                messageElement.classList.add("received");
+            }
+            messageElement.textContent = messageContent;
+            messageElement.classList.add("message");
+            messagesElement.appendChild(messageElement);
+        });
+    }
+}
+
+// Mesaj gönderme işlemi
+function sendMessage() {
+    if (!selectedUser) {
+        alert('Lütfen bir kullanıcı seçin.');
+        return;
+    }
+
+    var messageInput = document.getElementById("message-input");
+    var message = messageInput.value.trim();
+    if (message !== "") {
+        var messages = loadMessagesFromLocalStorage();
+        
+        // Mesajları iki taraflı olarak sakla
+        if (!messages[selectedUser]) {
+            messages[selectedUser] = [];
+        }
+        if (!messages[currentUser]) {
+            messages[currentUser] = [];
+        }
+
+        var messageObject = { 
+            sender: currentUser, 
+            content: message, 
+            timestamp: getCurrentTime() // Şu anki tarih ve saati al
+        };
+
+        messages[selectedUser].push(messageObject);
+        messages[currentUser].push(messageObject);
+
+        saveMessagesToLocalStorage(messages);
+        
+        var messageElement = document.createElement("div");
+        var messageContent = "Sen: " + message + " - " + messageObject.timestamp;
+        messageElement.textContent = messageContent;
+        messageElement.classList.add("message", "sent");
+        document.getElementById("messages").appendChild(messageElement);
+        messageInput.value = "";
+    }
+}
+
+// Kullanıcı silme işlemi
+function deleteUser() {
+    if (selectedUser === adminUser) {
+        alert("Admin kullanıcıyı silemezsiniz.");
+        return;
+    }
+
+    var users = loadUsersFromLocalStorage();
+    delete users[selectedUser];
+    localStorage.setItem("users", JSON.stringify(users));
+    selectedUser = null;
+    updateUserList();
+    document.getElementById("messages").innerHTML = ""; // Mesajları temizle
+}
+
+// Mesajları silme işlemi
+function deleteMessages() {
+    if (!selectedUser) {
+        alert('Lütfen bir kullanıcı seçin.');
+        return;
+    }
+
+    var messages = loadMessagesFromLocalStorage();
+    messages[selectedUser] = [];
+    saveMessagesToLocalStorage(messages);
+    loadMessages(selectedUser);
+}
+
+// Şu anki tarih ve saati al
+function getCurrentTime() {
+    var now = new Date();
+    var hours = now.getHours();
+    var minutes = now.getMinutes();
+    var timeString = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
+    return timeString;
+}
+
+// Sayfa yüklendiğinde kullanıcı listesini güncelle
+document.addEventListener('DOMContentLoaded', function() {
+    if (!currentUser) {
+        alert('Lütfen giriş yapın.');
+        window.location.href = 'wplogin.html';
+        return;
+    }
+
+    document.getElementById("current-user-display").textContent = currentUser;
+    updateUserList(); // Kullanıcı listesini güncelle
+});
+</script>
+</body>
+</html>

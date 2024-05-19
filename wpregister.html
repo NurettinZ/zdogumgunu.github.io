@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f2f2f2;
+        }
+        .form-container {
+            max-width: 400px;
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .submit-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="form-container">
+        <h2>Kayıt Ol</h2>
+        <input type="text" id="register-username" class="input-field" placeholder="Kullanıcı Adı">
+        <input type="email" id="register-email" class="input-field" placeholder="E-posta">
+        <input type="password" id="register-password" class="input-field" placeholder="Şifre">
+        <input type="password" id="register-confirm-password" class="input-field" placeholder="Şifreyi Onayla">
+        <button class="submit-button" onclick="register()">Kayıt Ol</button>
+        <p>Zaten bir hesabınız var mı? <a href="wplogin.html">Giriş Yap</a></p>
+    </div>
+</div>
+
+<script>
+let users = {};
+
+function loadUserData() {
+    const data = localStorage.getItem('users');
+    if (data) {
+        users = JSON.parse(data);
+    }
+}
+
+function saveUserData() {
+    localStorage.setItem('users', JSON.stringify(users));
+}
+
+function register() {
+    const username = document.getElementById('register-username').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value.trim();
+    const confirmPassword = document.getElementById('register-confirm-password').value.trim();
+    
+    if (username && email && password && confirmPassword) {
+        if (password === confirmPassword) {
+            if (!users[username]) {
+                const isAdmin = username === 'admin'; // Sadece "admin" kullanıcı adıyla kayıt olan kişi yönetici olur
+                users[username] = { password: password, email: email, isAdmin: isAdmin };
+                saveUserData();
+                alert('Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.');
+                window.location.href = 'wplogin.html'; // Kullanıcıyı giriş sayfasına yönlendir
+            } else {
+                alert('Bu kullanıcı adı zaten mevcut.');
+            }
+        } else {
+            alert('Şifreler uyuşmuyor.');
+        }
+    } else {
+        alert('Lütfen tüm alanları doldurun.');
+    }
+}
+
+window.onload = loadUserData;
+</script>
+
+</body>
+</html>

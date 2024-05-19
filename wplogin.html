@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giriş Yap</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+    }
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f2f2f2;
+    }
+    .form-container {
+        max-width: 400px;
+        width: 100%;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .input-field {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    .submit-button {
+        width: 100%;
+        padding: 10px;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="form-container">
+        <h2>Giriş Yap</h2>
+        <input type="text" id="username" class="input-field" placeholder="Kullanıcı Adı">
+        <input type="password" id="password" class="input-field" placeholder="Şifre">
+        <button class="submit-button" onclick="login()">Giriş Yap</button>
+        <p>Hesabınız yok mu? <a href="register.html">Kayıt Ol</a></p>
+    </div>
+</div>
+
+<script>
+let users = {};
+
+function loadUserData() {
+    const data = localStorage.getItem('users');
+    if (data) {
+        users = JSON.parse(data);
+    }
+}
+
+function login() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    if (username && password) {
+        if (users[username] && users[username].password === password) {
+            alert('Giriş başarılı!');
+            sessionStorage.setItem('currentUser', username);
+            sessionStorage.setItem('isAdmin', users[username].isAdmin);
+            window.location.href = 'indexw.html'; // Kullanıcıyı mesajlaşma sayfasına yönlendir
+        } else {
+            alert('Kullanıcı adı veya şifre hatalı.');
+        }
+    } else {
+        alert('Lütfen tüm alanları doldurun.');
+    }
+}
+
+window.onload = loadUserData;
+</script>
+
+</body>
+</html>
